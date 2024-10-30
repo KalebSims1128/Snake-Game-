@@ -1,0 +1,121 @@
+import pygame
+import random
+
+# Initialize Pygame
+pygame.init()
+print(pygame.ver)  # Print Pygame version for confirmation
+
+# Set the game title with your name or initials
+pygame.display.set_caption("Kaleb's Snake Game")
+
+# Screen setup
+screen_width = 600  # Width of the game screen
+screen_height = 400  # Height of the game screen
+game_screen = pygame.display.set_mode((screen_width, screen_height))  # Create the game window
+
+# Colors (RGB)
+black = (0, 0, 0)    # Background color
+white = (255, 255, 255)  # Text color
+green = (0, 255, 0)  # Snake color
+red = (255, 0, 0)    # Apple color
+
+# Clock and FPS settings
+clock = pygame.time.Clock()  # Pygame clock to control frame rate
+fps = 15  # Frames per second (higher = faster game)
+
+# Initial snake settings
+snake_segments = []  # List to hold each segment of the snake
+snake_size = 10  # Size of each snake segment (width and height in pixels)
+snake_length = 5  # Initial length of the snake
+for i in range(snake_length):
+    # Calculate the starting position for each segment
+    x = 250 - (snake_size * i)
+    y = 200
+    # Create a rectangle for each segment
+    segment = pygame.Rect(x, y, snake_size, snake_size)
+    snake_segments.append(segment)  # Add segment to snake list
+
+# Apple settings
+apple_size = 10  # Size of the apple
+# Randomly position the apple within the screen
+apple_position = (
+    random.randrange(0, screen_width // apple_size) * apple_size,
+    random.randrange(0, screen_height // apple_size) * apple_size
+)
+apple = pygame.Rect(apple_position[0], apple_position[1], apple_size, apple_size)  # Create the apple rectangle
+
+# Font for displaying score
+font = pygame.font.Font(None, 36)  # Default font and size
+direction = 'RIGHT'  # Initial direction of snake movement
+score = 0  # Initialize score
+running = True  # Game loop control variable
+
+# Main game loop
+while running:
+    for event in pygame.event.get():  # Process events
+        if event.type == pygame.QUIT:  # If the user closes the game window
+            running = False
+        elif event.type == pygame.KEYDOWN:  # Handle key presses
+            # Ensure the snake can't turn directly into itself
+            if event.key == pygame.K_UP and direction != 'DOWN':
+                direction = 'UP'
+            elif event.key == pygame.K_DOWN and direction != 'UP':
+                direction = 'DOWN'
+            elif event.key == pygame.K_LEFT and direction != 'RIGHT':
+                direction = 'LEFT'
+            elif event.key == pygame.K_RIGHT and direction != 'LEFT':
+                direction = 'RIGHT'
+
+    # Move the snake in the chosen direction
+    x, y = snake_segments[0].topleft  # Get position of the snake's head
+    if direction == 'UP':
+        y -= snake_size
+    elif direction == 'DOWN':
+        y += snake_size
+    elif direction == 'LEFT':
+        x -= snake_size
+    elif direction == 'RIGHT':
+        x += snake_size
+
+    # Add new head segment at new position and remove the last segment
+    new_head = pygame.Rect(x, y, snake_size, snake_size)
+    snake_segments.insert(0, new_head)  # Insert new head segment
+
+    # Check for collisions with walls or itself
+    if (snake_segments[0].left < 0 or snake_segments[0].right > screen_width or
+            snake_segments[0].top < 0 or snake_segments[0].bottom > screen_height or
+            snake_segments[0] in snake_segments[1:]):
+        running = False  # End game if collision occurs
+
+    # Check if snake eats the apple
+    if snake_segments[0].colliderect(apple):  # If snake head touches the apple
+        score += 10  # Increase score
+        # Reposition the apple at a random location
+        apple_position = (random.randrange(0, screen_width // apple_size) * apple_size,
+                          random.randrange(0, screen_height // apple_size) * apple_size)
+        apple = pygame.Rect(apple_position[0], apple_position[1], apple_size, apple_size)
+    else:
+        snake_segments.pop()  # Remove the last segment if no apple is eaten
+
+    # Draw everything on the game screen
+    game_screen.fill(black)  # Clear screen
+    for segment in snake_segments:
+        pygame.draw.rect(game_screen, green, segment)  # Draw each snake segment
+    pygame.draw.rect(game_screen, red, apple)  # Draw the apple
+
+    # Display the score
+    font = pygame.font.Font(None, 36)
+    score_text = font.render('Score: ' + str(score), True, white)
+    game_screen.blit(score_text, (10, 10))  # Position the score text on screen
+
+    pygame.display.update()  # Update the display with new graphics
+    clock.tick(fps)  # Control game speed
+
+# Game over screen
+game_screen.fill(black)  # Clear screen
+game_over_text = font.render('Game Over', True, red)
+# Center the game over message on the screen
+game_screen.blit(game_over_text, (screen_width // 2 - game_over_text.get_width() // 2, screen_height // 2))
+pygame.display.update()  # Display the game over message
+pygame.time.wait(2000)  # Pause for 2 seconds
+pygame.quit()  # Close the game window
